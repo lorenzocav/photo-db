@@ -1,0 +1,50 @@
+# [tool.ruff]
+# line-length = 120
+
+[tool.mypy]
+plugins = [
+    "pydantic.mypy"
+]
+
+# follow_imports = "silent"
+warn_redundant_casts = true
+warn_unused_ignores = true
+disallow_any_generics = true
+check_untyped_defs = true
+no_implicit_reexport = true
+
+# for strict mypy: (this is the tricky one :-))
+disallow_untyped_defs = true
+
+[tool.pydantic-mypy]
+init_forbid_extra = true
+init_typed = true
+warn_required_dynamic_aliases = true
+
+[tool.poetry]
+name = "myapi"
+version = "0.1.0"
+description = "A db api with fastapi"
+authors = ["lorenzo <lorenzocav97@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+requests = "^2.31.0"
+pydantic = "^2.5.3"
+fastapi = "^0.109.0"
+polars = "^0.20.6"
+uvicorn = {extras = ["standard"], version = "^0.27.0.post1"}
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.4.4"
+ipykernel = "^6.29.0"
+numpy = "^1.26.3"
+scikit-learn = "^1.4.0"
+pandas = "^2.2.0"
+matplotlib = "^3.8.2"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

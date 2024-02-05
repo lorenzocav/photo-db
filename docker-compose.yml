@@ -1,0 +1,9 @@
+services:
+  db:
+    build: ./db
+    image: db-image
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: api_db
+    container_name: db-container

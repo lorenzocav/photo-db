@@ -2,8 +2,19 @@ services:
   db:
     build: ./db
     image: db-image
+    network_mode: bridge
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: api_db
     container_name: db-container
+
+  api:
+    depends_on:
+      - db
+    build: ./api
+    image: api-image
+    network_mode: bridge
+    ports:
+      - 127.0.0.1:8000:8000
+    container_name: api-container

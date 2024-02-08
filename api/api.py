@@ -1,6 +1,6 @@
 from typing import Annotated, Optional, Sequence
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from pydantic import StringConstraints
 from sqlmodel import Field, Session, SQLModel, create_engine, select
 
@@ -46,17 +46,24 @@ def get_accounts() -> Sequence[Account]:
 def get_account_name(account_id: int) -> str:
     with Session(engine) as session:
         statement = select(Account.name).where(Account.id == account_id)
-        name = session.exec(statement).one()
+        name = session.exec(statement).first()
+        if name is None:
+            raise HTTPException(
+                status_code=404, detail=f"Account with id: {id} not found"
+            )
 
     return name
 
 
-@app.delete("/account/{account_id}")
+@app.delete("/account/{account_id}", status_code=204)
 def delete_account(account_id: int) -> None:
     with Session(engine) as session:
         statement = select(Account).where(Account.id == account_id)
-        results = session.exec(statement)
-        account = results.one()
+        account = session.exec(statement).first()
+        if account is None:
+            raise HTTPException(
+                status_code=404, detail=f"Account with id: {id} not found"
+            )
 
         session.delete(account)
         session.commit()
@@ -66,12 +73,14 @@ def delete_account(account_id: int) -> None:
 def update_account(account: Account) -> Account:
     with Session(engine) as session:
         statement = select(Account).where(Account.id == account.id)
-        results = session.exec(statement)
-        old_account = results.one()
+        old_account = session.exec(statement).first()
+        if old_account is None:
+            raise HTTPException(
+                status_code=404, detail=f"Account with id: {id} not found"
+            )
 
-        old_account.name = account.name
-        session.add(old_account)
+        session.add(account)
         session.commit()
-        session.refresh(old_account)
+        session.refresh(account)
 
-    return old_account
+    return account

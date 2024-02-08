@@ -1,8 +1,14 @@
+networks:
+  my_network:
+    driver: bridge
+
+
 services:
   db:
     build: ./db
     image: db-image
-    network_mode: bridge
+    networks:
+      - my_network
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -14,7 +20,8 @@ services:
       - db
     build: ./api
     image: api-image
-    network_mode: bridge
+    networks:
+      - my_network
     ports:
-      - 127.0.0.1:8000:8000
+      - 8000:8000
     container_name: api-container

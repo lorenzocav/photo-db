@@ -50,6 +50,7 @@ psycopg2-binary = "^2.9.9"
 types-psycopg2 = "^2.9.21.20240201"
 sqlalchemy = "^2.0.25"
 sqlmodel = "^0.0.14"
+python-multipart = "^0.0.7"
 
 [build-system]
 requires = ["poetry-core"]

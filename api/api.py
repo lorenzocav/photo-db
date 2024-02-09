@@ -1,6 +1,6 @@
 from typing import Annotated, Optional, Sequence
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile
 from pydantic import StringConstraints
 from sqlmodel import Field, Session, SQLModel, create_engine, select
 
@@ -84,3 +84,16 @@ def update_account(account: Account) -> Account:
         session.refresh(account)
 
     return account
+
+
+@app.post("/photo")
+async def upload_photo(photo: UploadFile, account: str) -> dict[str, str]:
+    if photo.content_type.split("/")[0] != "image":
+        raise HTTPException(status_code=422, detail="The uploaded file is not an image")
+
+    contents = await photo.read()
+    fname = hash(contents)
+    with open(f"./photos/{fname}", "wb") as file:
+        file.write(contents)
+
+    return {"photo": "photo", "account": account}

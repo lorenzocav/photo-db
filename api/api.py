@@ -1,6 +1,7 @@
+from enum import Enum
 from typing import Annotated, Optional, Sequence
 
-from fastapi import FastAPI, HTTPException, UploadFile
+from fastapi import FastAPI, HTTPException, Path, Query, UploadFile
 from pydantic import StringConstraints
 from sqlmodel import Field, Session, SQLModel, create_engine, select
 
@@ -8,6 +9,14 @@ from sqlmodel import Field, Session, SQLModel, create_engine, select
 class Account(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     name: Annotated[str, StringConstraints(max_length=255)]
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "id": 1,
+                "name": "Lorenzo",
+            }
+        }
 
 
 class Photo(SQLModel, table=True):
@@ -17,6 +26,22 @@ class Photo(SQLModel, table=True):
     date_upload: int
     user_id: int
 
+    class Config:
+        schema_extra = {
+            "example": {
+                "id": 1,
+                "photo_path": "/users/name/documents/path_to_image",
+                "photo_title": "sunrise.jpg",
+                "date_upload": "12/02/2024",
+                "user_id": 10,
+            }
+        }
+
+
+class Tags(Enum):
+    account = "account"
+    photo = "photo"
+
 
 SQLALCHEMY_DATABASE_URL = "postgresql://postgres:postgres@db-container:5432/api_db"
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
@@ -24,7 +49,12 @@ engine = create_engine(SQLALCHEMY_DATABASE_URL)
 app = FastAPI()
 
 
-@app.post("/account", status_code=201)
+@app.post(
+    "/account",
+    status_code=201,
+    description="Route to create Account row",
+    tags=[Tags.account],
+)
 def insert_account(account: Account) -> Account:
     with Session(engine) as session:
         session.add(account)
@@ -34,7 +64,12 @@ def insert_account(account: Account) -> Account:
     return account
 
 
-@app.get("/accounts")
+@app.get(
+    "/accounts",
+    status_code=200,
+    description="Route to get Account Table view",
+    tags=[Tags.account],
+)
 def get_accounts() -> Sequence[Account]:
     with Session(engine) as session:
         accounts = session.exec(select(Account)).all()
@@ -42,8 +77,15 @@ def get_accounts() -> Sequence[Account]:
     return accounts
 
 
-@app.get("/account/{account_id}")
-def get_account_name(account_id: int) -> str:
+@app.get(
+    "/account/{account_id}",
+    status_code=200,
+    description="Route to get an account by its id",
+    tags=[Tags.account],
+)
+def get_account_name(
+    account_id: int = Path(..., title="The id of the account to get", gt=0),
+) -> str:
     with Session(engine) as session:
         statement = select(Account.name).where(Account.id == account_id)
         name = session.exec(statement).first()
@@ -55,8 +97,15 @@ def get_account_name(account_id: int) -> str:
     return name
 
 
-@app.delete("/account/{account_id}", status_code=204)
-def delete_account(account_id: int) -> None:
+@app.delete(
+    "/account/{account_id}",
+    status_code=204,
+    description="Route to delete an account by its id",
+    tags=[Tags.account],
+)
+def delete_account(
+    account_id: int = Path(..., title="The id of the account to delete", gt=0),
+) -> None:
     with Session(engine) as session:
         statement = select(Account).where(Account.id == account_id)
         account = session.exec(statement).first()
@@ -69,7 +118,12 @@ def delete_account(account_id: int) -> None:
         session.commit()
 
 
-@app.put("/account")
+@app.put(
+    "/account",
+    status_code=200,
+    description="Route to update an existing account",
+    tags=[Tags.account],
+)
 def update_account(account: Account) -> Account:
     with Session(engine) as session:
         statement = select(Account).where(Account.id == account.id)
@@ -86,8 +140,13 @@ def update_account(account: Account) -> Account:
     return account
 
 
-@app.post("/photo")
-async def upload_photo(photo: UploadFile, account: str) -> dict[str, str]:
+@app.post(
+    "/photo", status_code=201, description="Route to upload a photo", tags=[Tags.photo]
+)
+async def upload_photo(
+    photo: UploadFile,
+    account: str = Query(..., max_length=20),
+) -> dict[str, str]:
     if photo.content_type.split("/")[0] != "image":
         raise HTTPException(status_code=422, detail="The uploaded file is not an image")
 

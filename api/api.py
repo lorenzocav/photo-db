@@ -10,14 +10,6 @@ class Account(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     name: Annotated[str, StringConstraints(max_length=255)]
 
-    class Config:
-        schema_extra = {
-            "example": {
-                "id": 1,
-                "name": "Lorenzo",
-            }
-        }
-
 
 class Photo(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -25,17 +17,6 @@ class Photo(SQLModel, table=True):
     photo_title: Annotated[str, StringConstraints(max_length=63)]
     date_upload: int
     user_id: int
-
-    class Config:
-        schema_extra = {
-            "example": {
-                "id": 1,
-                "photo_path": "/users/name/documents/path_to_image",
-                "photo_title": "sunrise.jpg",
-                "date_upload": "12/02/2024",
-                "user_id": 10,
-            }
-        }
 
 
 class Tags(Enum):

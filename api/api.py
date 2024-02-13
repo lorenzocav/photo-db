@@ -1,3 +1,4 @@
+import time
 from enum import Enum
 from typing import Annotated, Optional, Sequence
 
@@ -135,12 +136,13 @@ async def upload_photo(
         raise HTTPException(status_code=422, detail="The uploaded file is not an image")
 
     photo_data = await photo.read()
+    date_upload = int(time.time())
 
     with Session(engine) as session:
         photo_db = Photo(
             photo_title=photo.filename,
             photo_data=photo_data,
-            date_upload=123456,
+            date_upload=date_upload,
             user_id=account_id,
         )
         session.add(photo_db)

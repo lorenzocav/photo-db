@@ -13,8 +13,9 @@ class Account(SQLModel, table=True):
 
 class Photo(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    photo_path: Annotated[str, StringConstraints(max_length=63)]
+    # photo_path: Annotated[str, StringConstraints(max_length=63)]
     photo_title: Annotated[str, StringConstraints(max_length=63)]
+    photo_data: bytes
     date_upload: int
     user_id: int
 
@@ -126,14 +127,37 @@ def update_account(account: Account) -> Account:
 )
 async def upload_photo(
     photo: UploadFile,
-    account: str = Query(..., max_length=20),
+    account_id: int = Query(
+        ..., description="The id of the account associated with the photo"
+    ),
 ) -> dict[str, str]:
     if photo.content_type.split("/")[0] != "image":
         raise HTTPException(status_code=422, detail="The uploaded file is not an image")
 
-    contents = await photo.read()
-    fname = hash(contents)
-    with open(f"./photos/{fname}", "wb") as file:
-        file.write(contents)
+    photo_data = await photo.read()
 
-    return {"photo": "photo", "account": account}
+    with Session(engine) as session:
+        photo_db = Photo(
+            photo_title=photo.filename,
+            photo_data=photo_data,
+            date_upload=123456,
+            user_id=account_id,
+        )
+        session.add(photo_db)
+        session.commit()
+        session.refresh(photo_db)
+
+    return {"message": "Photo uploaded successfully"}
+
+
+# @app.get(
+#     "/photo",
+#     status_code=200,
+#     description="Route to get Photo Table view",
+#     tags=[Tags.photo],
+# )
+# def get_photo_accounts() -> Sequence[Photo]:
+#     with Session(engine) as session:
+#         photos = session.exec(select(Photo)).all()
+
+#     return Response(photos)

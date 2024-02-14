@@ -171,7 +171,7 @@ async def upload_photo(
     "/photos",
     status_code=200,
     description="Route to get Photo Table view",
-    tags=[Tags.account],
+    tags=[Tags.photo],
 )
 def get_photos() -> Sequence[Photo]:
     with Session(engine) as session:

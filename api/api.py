@@ -20,7 +20,7 @@ class Photo(SQLModel, table=True):
     photo_title: Annotated[str, StringConstraints(max_length=63)]
     photo_data_base64: str
     date_upload: int
-    user_id: int
+    user_id: int = Field(foreign_key="account.id")
 
 
 class Tags(Enum):
@@ -178,3 +178,40 @@ def get_photos() -> Sequence[Photo]:
         photos = session.exec(select(Photo)).all()
 
     return photos
+
+
+@app.get(
+    "/photo",
+    status_code=200,
+    description="Route to get Photo of a given user",
+    tags=[Tags.photo],
+)
+def get_photos_user(
+    account_id: int = Query(..., description="Account ID"),
+) -> Sequence[Photo]:
+    with Session(engine) as session:
+        # Retrieve photos based on the provided account_id
+        photos = session.exec(select(Photo).where(Photo.user_id == account_id)).all()
+
+    return photos
+
+
+@app.delete(
+    "/photo/{photo_id}",
+    status_code=204,
+    description="Route to delete a photo by its id",
+    tags=[Tags.photo],
+)
+def delete_photo(
+    photo_id: int = Path(..., title="The id of the account to delete", gt=0),
+) -> None:
+    with Session(engine) as session:
+        statement = select(Photo).where(Photo.id == photo_id)
+        photo = session.exec(statement).first()
+        if photo is None:
+            raise HTTPException(
+                status_code=404, detail=f"Photo with id: {id} not found"
+            )
+
+        session.delete(photo)
+        session.commit()

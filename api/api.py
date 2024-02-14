@@ -2,6 +2,7 @@ from enum import Enum
 from typing import Annotated, Optional, Sequence
 
 from fastapi import FastAPI, HTTPException, Path, Query, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import StringConstraints
 from sqlmodel import Field, Session, SQLModel, create_engine, select
 
@@ -29,6 +30,14 @@ SQLALCHEMY_DATABASE_URL = "postgresql://postgres:postgres@db-container:5432/api_
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 
 app = FastAPI()
+# Allow all origins for CORS (be cautious in production)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.post(
@@ -109,17 +118,18 @@ def delete_account(
 def update_account(account: Account) -> Account:
     with Session(engine) as session:
         statement = select(Account).where(Account.id == account.id)
-        old_account = session.exec(statement).first()
-        if old_account is None:
+        existing_account = session.exec(statement).first()
+
+        if existing_account is None:
             raise HTTPException(
-                status_code=404, detail=f"Account with id: {id} not found"
+                status_code=404, detail=f"Account with id: {account.id} not found"
             )
 
-        session.add(account)
+        existing_account.name = account.name
         session.commit()
-        session.refresh(account)
+        session.refresh(existing_account)
 
-    return account
+    return existing_account
 
 
 @app.post(
@@ -148,16 +158,3 @@ async def upload_photo(
         session.refresh(photo_db)
 
     return {"message": "Photo uploaded successfully"}
-
-
-# @app.get(
-#     "/photo",
-#     status_code=200,
-#     description="Route to get Photo Table view",
-#     tags=[Tags.photo],
-# )
-# def get_photo_accounts() -> Sequence[Photo]:
-#     with Session(engine) as session:
-#         photos = session.exec(select(Photo)).all()
-
-#     return Response(photos)

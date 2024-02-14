@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS account (
 CREATE TABLE IF NOT EXISTS photo (
     id serial PRIMARY KEY,
     photo_title varchar(64) NOT NULL,
-    photo_data bytea,
+    photo_data_base64 TEXT,
     date_upload bigint NOT NULL,
     user_id serial REFERENCES account(id) NOT NULL
 );

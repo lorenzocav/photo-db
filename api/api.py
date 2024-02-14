@@ -1,3 +1,4 @@
+import base64
 import time
 from enum import Enum
 from typing import Annotated, Optional, Sequence
@@ -17,7 +18,7 @@ class Photo(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     # photo_path: Annotated[str, StringConstraints(max_length=63)]
     photo_title: Annotated[str, StringConstraints(max_length=63)]
-    photo_data: bytes
+    photo_data_base64: str
     date_upload: int
     user_id: int
 
@@ -148,10 +149,14 @@ async def upload_photo(
     photo_data = await photo.read()
     date_upload = int(time.time())
 
+    photo_data_base64 = base64.b64encode(photo_data).decode(
+        "utf-8"
+    )  # Converti i dati binari in base64
+
     with Session(engine) as session:
         photo_db = Photo(
             photo_title=photo.filename,
-            photo_data=photo_data,
+            photo_data_base64=photo_data_base64,
             date_upload=date_upload,
             user_id=account_id,
         )
@@ -160,3 +165,16 @@ async def upload_photo(
         session.refresh(photo_db)
 
     return {"message": "Photo uploaded successfully"}
+
+
+@app.get(
+    "/photos",
+    status_code=200,
+    description="Route to get Photo Table view",
+    tags=[Tags.account],
+)
+def get_photos() -> Sequence[Photo]:
+    with Session(engine) as session:
+        photos = session.exec(select(Photo)).all()
+
+    return photos
